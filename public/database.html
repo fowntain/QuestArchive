@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: #0c0c0c;
+            color: #d4d4d4;
+            margin: 0;
+            padding: 24px;
+            line-height: 1.5;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding: 12px 20px;
+            background: rgba(25, 25, 25, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid #333;
+            border-radius: 8px;
+            position: sticky;
+            top: 24px;
+            z-index: 100;
+        }
+
+        .btn {
+            background: #333;
+            color: #eee;
+            border: 1px solid #444;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            background: #444;
+            border-color: #555;
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.active {
+            background: #007acc;
+            color: #fff;
+            border-color: #008be1;
+            box-shadow: 0 0 12px rgba(0, 122, 204, 0.3);
+        }
+
+        .btn-delete {
+            background: #5a1a1a;
+            border-color: #7a2a2a;
+            color: #ff9999;
+        }
+
+        .btn-delete:hover {
+            background: #7a2a2a;
+            color: #fff;
+        }
+
+        .btn-tab {
+            background: transparent;
+            border-color: #444;
+            color: #d4d4d4;
+        }
+
+        .btn-tab:hover {
+            background: #2a2d2e;
+        }
+
+        .btn-tab.active {
+            background: #2a2d2e;
+            border-color: #007acc;
+            color: #fff;
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #181818;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th {
+            background: #252526;
+            text-align: left;
+            padding: 14px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #888;
+            border-bottom: 1px solid #333;
+        }
+
+        td {
+            padding: 14px;
+            border-bottom: 1px solid #2a2a2a;
+            font-size: 13px;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Checkbox */
+        input[type="checkbox"] {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+            accent-color: #007acc;
+        }
+
+        /* Modal */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal {
+            background: #1e1e1e;
+            border: 1px solid #333;
+            padding: 30px;
+            width: 540px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            border-radius: 12px;
+            animation: modalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid transparent;
+            color: #888;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 2px 8px;
+            border-radius: 4px;
+            line-height: 1.4;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-color: #444;
+        }
+
+        @keyframes modalIn {
+            from {
+                transform: scale(0.95);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #808080;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        textarea,
+        select.form-control {
+            width: 100%;
+            box-sizing: border-box;
+            background: #252526;
+            color: #d4d4d4;
+            border: 1px solid #333;
+            padding: 10px 12px;
+            font-family: inherit;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        textarea {
+            resize: none;
+        }
+
+        input:focus,
+        textarea:focus,
+        select.form-control:focus {
+            outline: none;
+            border-color: #007acc;
+            background: #2d2d30;
+            box-shadow: 0 0 0 1px rgba(0, 122, 204, 0.4);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #333;
+        }
+
+        .uploader {
+            margin-bottom: 20px;
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 14px;
+            background: #1b1b1b;
+        }
+
+        .dropzone {
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 16px;
+            background: #141414;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .dropzone.active {
+            border-color: #007acc;
+            box-shadow: 0 0 0 1px rgba(0, 122, 204, 0.35);
+        }
+
+        .progress-wrap {
+            margin-top: 12px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #101010;
+            height: 12px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #007acc;
+            transition: width 0.15s linear;
+        }
+
+        .muted {
+            color: #808080;
+            font-size: 12px;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 2000;
+        }
+
+        .toast {
+            background: #1e1e1e;
+            border: 1px solid #333;
+            color: #ccc;
+            padding: 12px 20px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            animation: toastIn 0.3s ease-out forwards;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 320px;
+        }
+
+        @keyframes toastIn {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .toast.error {
+            border-left: 4px solid #f44336;
+            color: #ff9999;
+        }
+
+        .toast.success {
+            border-left: 4px solid #4caf50;
+            color: #99ff99;
+        }
+
+        .toast.info {
+            border-left: 4px solid #2196f3;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 12px;
+            }
+
+            .toolbar {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .dropzone {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .dropzone>div:last-child {
+                flex-wrap: wrap;
+                justify-content: flex-end;
+            }
+
+            .dropzone input[type="text"] {
+                width: 100% !important;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <!-- Toast Notifications -->
+        <div class="toast-container">
+            <div v-for="toast in toasts" :key="toast.id" class="toast" :class="toast.type">
+                {{ toast.message }}
+            </div>
+        </div>
+        <div v-if="!isAuthenticated" class="overlay">
+            <div class="modal">
+                <div class="form-group">
+                    <label>Enter Admin Password to view database</label>
+                    <input type="password" v-model="password" @keyup.enter="login" autofocus>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn" @click="login">Unlock</button>
+                </div>
+            </div>
+        </div>
+
+        <template v-else>
+            <div class="toolbar">
+                <span style="color: #4ec9b0; font-size: 16px;">Database Viewer</span>
+                <button class="btn btn-tab" :class="{ active: activeTab === 'games' }"
+                    @click="activeTab = 'games'">Games</button>
+                <button class="btn btn-tab" :class="{ active: activeTab === 'donations' }"
+                    @click="openDonations">Donations</button>
+                <button class="btn btn-tab" :class="{ active: activeTab === 'storage' }" @click="openStorage">Server
+                    Storage</button>
+                <button class="btn btn-tab" :class="{ active: activeTab === 'migration' }"
+                    @click="activeTab = 'migration'">Maintenance</button>
+                <button class="btn btn-tab" :class="{ active: activeTab === 'logs' }" @click="openLogs">Logs</button>
+                <button v-if="activeTab === 'games'" class="btn" @click="openAddModal" style="background: #007acc; border-color: #008be1;">+ Add Game</button>
+                <button v-if="activeTab === 'games' && selectedIds.length > 0" class="btn btn-delete" @click="bulkRemove">
+                    Remove Selected ({{ selectedIds.length }})
+                </button>
+                <div style="margin-left: auto; display: flex; gap: 12px; align-items: center;">
+                    <div style="position: relative;">
+                        <input type="text" v-model="searchQuery" placeholder="Search database..." 
+                            style="width: 200px; padding: 6px 12px 6px 30px; font-size: 13px; background: #252526; border: 1px solid #333; border-radius: 6px; color: #eee;">
+                        <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #666; font-size: 14px;">🔍</span>
+                    </div>
+                    <span style="color: #808080; font-size: 12px;">Total: {{ filteredGames.length }} / {{ games.length }}</span>
+                </div>
+            </div>
+
+            <div v-if="activeTab === 'games'" class="uploader">
+                <div class="dropzone" :class="{ active: isDragOver }" @dragenter.prevent="isDragOver = true"
+                    @dragover.prevent="isDragOver = true" @dragleave.prevent="isDragOver = false"
+                    @drop.prevent="handleDrop">
+                    <div>
+                        <div style="color:#fff; font-size: 13px; font-weight: 600;">Upload Game File (.zip)</div>
+                        <div class="muted">Pick a .zip, we compute a unique Hash ID on the server, upload the original
+                            file name, and update map_md5.json (hash → file name).</div>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button class="btn" @click="openFilePicker"
+                            :disabled="uploadState.inProgress || hashState.computing">Choose File</button>
+                        <button class="btn" @click="startUploadPrepared"
+                            :disabled="!preparedFile || uploadState.inProgress || hashState.computing">Upload</button>
+                        <button v-if="uploadState.inProgress || hashState.computing" class="btn btn-delete"
+                            @click="cancelUpload">Cancel</button>
+                        <input ref="fileInput" type="file" accept=".zip" style="display:none" @change="handleFileInput">
+                    </div>
+                </div>
+
+                <div :style="{ opacity: uploadState.removing ? 0 : 1, transition: 'opacity 0.45s ease' }">
+                    <div v-if="preparedFileName" style="margin-top: 10px;">
+                        <div class="muted">
+                            File: <span style="color:#ce9178;">{{ preparedFileName }}</span>
+                            <span v-if="uploadState.key"> → Key: <span style="color:#9cdcfe;">{{ uploadState.key
+                                    }}</span></span>
+                        </div>
+                    </div>
+
+                    <div v-if="uploadState.inProgress || uploadState.percent === 100" style="margin-top: 10px;">
+                        <div class="progress-wrap">
+                            <div class="progress-bar" :style="{ width: uploadState.percent + '%' }"></div>
+                        </div>
+                        <div class="muted"
+                            style="margin-top: 8px; display:flex; justify-content: space-between; gap: 10px;">
+                            <div>{{ uploadState.percent.toFixed(2) }}% · {{ uploadState.mbps.toFixed(2) }} MB/s · ETA {{
+                                uploadState.eta }}</div>
+                            <div v-if="uploadState.message" style="color:#b5cea8;">{{ uploadState.message }}</div>
+                        </div>
+                    </div>
+
+                    <div v-if="uploadState.error" style="margin-top: 10px; color:#ff9999; font-size: 12px;">
+                        {{ uploadState.error }}
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="activeTab === 'games'" class="uploader">
+                <div class="dropzone" :class="{ active: bulkDragOver }" @dragenter.prevent="bulkDragOver = true"
+                    @dragover.prevent="bulkDragOver = true" @dragleave.prevent="bulkDragOver = false"
+                    @drop.prevent="handleBulkDrop">
+                    <div>
+                        <div style="color:#fff; font-size: 13px; font-weight: 600;">Bulk Upload Games (up to 20 .zip)
+                        </div>
+                        <div class="muted">Drag & drop multiple .zip files. Uploads run one-by-one and shows per-file +
+                            total ETA.</div>
+                    </div>
+                    <div
+                        style="display:flex; gap:10px; align-items:center; flex-wrap: wrap; justify-content: flex-end;">
+                        <button class="btn btn-tab" :class="{ active: bulkQueueOpen }"
+                            @click="bulkQueueOpen = !bulkQueueOpen" :disabled="bulkQueue.length === 0">
+                            Queue ({{ bulkQueue.length }})
+                        </button>
+                        <button class="btn" @click="openBulkPicker" :disabled="bulkState.inProgress">Choose
+                            Files</button>
+                        <button class="btn" @click="startBulkUpload"
+                            :disabled="bulkQueue.length === 0 || bulkState.inProgress">Start</button>
+                        <button v-if="bulkState.inProgress" class="btn btn-delete" @click="cancelBulkUpload">Cancel
+                            All</button>
+                        <input ref="bulkInput" type="file" accept=".zip" multiple style="display:none"
+                            @change="handleBulkPick">
+                    </div>
+                </div>
+
+                <div v-if="bulkQueueOpen"
+                    style="margin-top: 12px; border: 1px solid #333; border-radius: 8px; background:#101010; max-height: 240px; overflow:auto;">
+                    <table style="margin-top:0;">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                                <th style="text-align:right;">Status</th>
+                                <th style="text-align:right; width: 70px;">X</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="item in bulkQueue" :key="item.name"
+                                :style="{ opacity: item.removing ? 0 : 1, transition: 'opacity 0.45s ease' }">
+                                <td style="color:#ce9178;">{{ item.name }}</td>
+                                <td style="text-align:right; font-size: 12px;"
+                                    :style="{ color: item.status === 'done' ? '#6a9955' : (item.status === 'uploading' ? '#9cdcfe' : '#808080') }">
+                                    {{ item.status === 'cancelled' ? 'cancelled' : item.status }}
+                                </td>
+                                <td style="text-align:right;">
+                                    <button v-if="item.status === 'uploading' && bulkState.inProgress"
+                                        class="btn btn-delete" style="padding: 2px 8px;"
+                                        @click="cancelCurrentBulkItem">✕</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div v-if="bulkState.inProgress || bulkState.totalPercent === 100" style="margin-top: 12px;">
+                    <div class="muted">
+                        Current: <span style="color:#ce9178;">{{ bulkState.currentName || '-' }}</span>
+                        <button v-if="bulkState.inProgress && bulkState.currentName" class="btn btn-delete"
+                            style="padding: 2px 8px; margin-left: 10px;" @click="cancelCurrentBulkItem">✕</button>
+                    </div>
+                    <div class="progress-wrap">
+                        <div class="progress-bar" :style="{ width: bulkState.currentPercent + '%' }"></div>
+                    </div>
+                    <div class="muted"
+                        style="margin-top: 8px; display:flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                        <div>File: {{ bulkState.currentPercent.toFixed(2) }}% · {{ bulkState.currentMbps.toFixed(2) }}
+                            MB/s · ETA {{ bulkState.currentEta }}</div>
+                        <div>Total: {{ bulkState.totalPercent.toFixed(2) }}% · ETA {{ bulkState.totalEta }}</div>
+                    </div>
+                </div>
+
+                <div v-if="bulkState.error" style="margin-top: 10px; color:#ff9999; font-size: 12px;">
+                    {{ bulkState.error }}
+                </div>
+            </div>
+
+            <table v-if="activeTab === 'games'">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">
+                            <input type="checkbox" @change="toggleAll"
+                                :checked="selectedIds.length === games.length && games.length > 0">
+                        </th>
+                        <th>Title</th>
+                        <th>Image</th>
+                        <th>Version</th>
+                        <th>Proxy Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-if="filteredGames.length === 0">
+                        <td colspan="5" style="text-align: center; color: #888; padding: 30px;">No games match your
+                            criteria.</td>
+                    </tr>
+                    <tr v-for="game in filteredGames" :key="game.id">
+                        <td>
+                            <input type="checkbox" :value="game.id" v-model="selectedIds">
+                        </td>
+                        <td style="color: #ce9178;">"{{ game.title }}"</td>
+                        <td
+                            style="color:#9cdcfe; font-size: 12px; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            {{ game.thumbnailUrl || '-' }}
+                        </td>
+                        <td style="color: #b5cea8;">{{ game.version }}</td>
+                        <td style="color: #6a9955; font-size: 12px;">Active ({{ game.hashId || '-' }})</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <table v-if="activeTab === 'donations'">
+                <thead>
+                    <tr>
+                        <th>File</th>
+                        <th>Timestamp</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-if="donationsLoading">
+                        <td colspan="3" style="text-align: center; color: #888; padding: 30px;">Loading donations...
+                        </td>
+                    </tr>
+                    <tr v-else-if="donations.length === 0">
+                        <td colspan="3" style="text-align: center; color: #888; padding: 30px;">No donated games found.
+                        </td>
+                    </tr>
+                    <tr v-for="item in donations" :key="item.key">
+                        <td style="color:#ce9178;">{{ item.key }}</td>
+                        <td style="color:#b5cea8; font-size: 12px;">{{ item.lastModified ? new
+                            Date(item.lastModified).toLocaleString() : '-' }}</td>
+                        <td style="text-align:right;">
+                            <button class="btn" @click="downloadDonation(item.key)">Download</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div v-if="activeTab === 'storage'" class="uploader">
+                <div class="dropzone">
+                    <div>
+                        <div style="color:#fff; font-size: 13px; font-weight: 600;">Server Storage (quest-archive)</div>
+                        <div class="muted">Browse folders and files inside your bucket. Click a folder to open it.</div>
+                    </div>
+                    <div
+                        style="display:flex; gap:10px; align-items:center; flex-wrap: wrap; justify-content: flex-end;">
+                        <div class="muted">Path: <span style="color:#9cdcfe;">/{{ storagePrefix }}</span></div>
+                        <button class="btn" @click="storageUp" :disabled="!storagePrefix || storageLoading">Up</button>
+                        <button class="btn" @click="fetchStorage(storagePrefix)"
+                            :disabled="storageLoading">Refresh</button>
+                    </div>
+                </div>
+                <div v-if="storageError" style="margin-top: 10px; color:#ff9999; font-size: 12px;">{{ storageError }}
+                </div>
+                <div v-if="storageTruncated" style="margin-top: 10px; color:#b5cea8; font-size: 12px;">More than 1000
+                    items exist in this folder. Showing the first page.</div>
+            </div>
+
+            <table v-if="activeTab === 'storage'">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Timestamp</th>
+                        <th style="text-align:right;">Size</th>
+                        <th style="text-align:right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-if="storageLoading">
+                        <td colspan="5" style="text-align: center; color: #888; padding: 30px;">Loading storage...</td>
+                    </tr>
+                    <tr v-else-if="storageFolders.length === 0 && storageObjects.length === 0">
+                        <td colspan="5" style="text-align: center; color: #888; padding: 30px;">This folder is empty.
+                        </td>
+                    </tr>
+                    <tr v-for="p in storageFolders" :key="p">
+                        <td style="color:#9cdcfe; cursor:pointer;" @click="openStorageFolder(p)">{{
+                            storageDisplayName(p) }}</td>
+                        <td style="color:#808080; font-size: 12px;">folder</td>
+                        <td style="color:#b5cea8; font-size: 12px;">-</td>
+                        <td style="text-align:right; color:#808080; font-size: 12px;">-</td>
+                        <td style="text-align:right;">
+                            <button class="btn btn-delete" @click="deleteStoragePrefix(p)">Delete</button>
+                        </td>
+                    </tr>
+                    <tr v-for="o in storageObjects" :key="o.key">
+                        <td style="color:#ce9178;">{{ storageDisplayName(o.key) }}</td>
+                        <td style="color:#808080; font-size: 12px;">file</td>
+                        <td style="color:#b5cea8; font-size: 12px;">{{ o.lastModified ? new
+                            Date(o.lastModified).toLocaleString() : '-' }}</td>
+                        <td style="text-align:right; color:#808080; font-size: 12px;">{{ formatBytes(o.size) }}</td>
+                        <td style="text-align:right; display:flex; gap:10px; justify-content:flex-end;">
+                            <button class="btn" @click="downloadStorage(o.key)">Download</button>
+                            <button class="btn btn-delete" @click="deleteStorageKey(o.key)">Delete</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div v-if="activeTab === 'migration'" class="uploader">
+                <div class="dropzone">
+                    <div>
+                        <div style="color:#fff; font-size: 13px; font-weight: 600;">Maintenance & Migration</div>
+                        <div class="muted">Sync the Hash map or convert raw R2 folders to hashed ZIPs.</div>
+                    </div>
+                    <div
+                        style="display:flex; gap:10px; align-items:center; flex-wrap: wrap; justify-content: flex-end;">
+                        <button class="btn" @click="syncMd5Map" :disabled="md5MapLoading">Sync Hash Map</button>
+                        <button class="btn" @click="startMigration" :disabled="migration.inProgress">Start Bulk Migration</button>
+                        <button class="btn" @click="fetchMigrationStatus">Refresh Status</button>
+                    </div>
+                </div>
+
+                <div v-if="migration.inProgress" style="margin-top: 15px;">
+                    <div class="muted">
+                        Processing: <span style="color:#ce9178;">{{ migration.currentFolder || '...' }}</span>
+                        <div style="margin-top:5px;">Progress: {{ migration.processed }} / {{ migration.total }}</div>
+                    </div>
+                    <div class="progress-wrap">
+                        <div class="progress-bar"
+                            :style="{ width: (migration.total ? (migration.processed / migration.total) * 100 : 0) + '%' }">
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="migration.logs.length > 0"
+                    style="margin-top: 15px; background: #101010; border: 1px solid #333; padding: 10px; border-radius: 6px; font-size: 12px; max-height: 300px; overflow-y: auto;">
+                    <div v-for="log in migration.logs" :key="log" style="margin-bottom: 2px;">{{ log }}</div>
+                </div>
+
+                <div v-if="migration.errors.length > 0" style="margin-top: 10px; color:#ff9999; font-size: 12px;">
+                    <strong>Errors ({{ migration.errors.length }}):</strong>
+                    <div v-for="err in migration.errors" :key="err" style="margin-top: 2px;">- {{ err }}</div>
+                </div>
+            </div>
+
+            <div v-if="activeTab === 'logs'">
+                <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin:0; color: #4ec9b0;">Server Logs (Last 100 lines)</h3>
+                    <button class="btn" @click="fetchLogs">Refresh</button>
+                </div>
+                <div class="logs-container"
+                    style="background: #111; padding: 15px; border-radius: 8px; border: 1px solid #333; font-family: 'Consolas', monospace; font-size: 12px; height: 600px; overflow-y: auto;">
+                    <div v-if="serverLogs.length === 0" class="muted">No logs found or directory empty.</div>
+                    <div v-for="(log, i) in serverLogs" :key="i"
+                        style="margin-bottom: 4px; border-bottom: 1px solid #222; padding-bottom: 4px;">
+                        <span
+                            :style="{ color: log.level === 'error' ? '#f44336' : (log.level === 'warn' ? '#ff9800' : '#888') }">
+                            [{{ log.timestamp }}] {{ log.level ? log.level.toUpperCase() : 'INFO' }}:
+                        </span>
+                        <span style="color: #eee;">{{ log.message }}</span>
+                        <div v-if="Object.keys(log).length > 3" class="muted" style="margin-left: 20px;">
+                            {{ JSON.stringify(Object.fromEntries(Object.entries(log).filter(([k]) =>
+                            !['level','message','timestamp'].includes(k)))) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="activeTab === 'logs'">
+                <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin:0; color: #4ec9b0;">Server Logs (Last 100 lines)</h3>
+                    <button class="btn" @click="fetchLogs">Refresh</button>
+                </div>
+                <div class="logs-container"
+                    style="background: #111; padding: 15px; border-radius: 8px; border: 1px solid #333; font-family: 'Consolas', monospace; font-size: 12px; height: 600px; overflow-y: auto;">
+                    <div v-if="serverLogs.length === 0" class="muted">No logs found or directory empty.</div>
+                    <div v-for="(log, i) in serverLogs" :key="i"
+                        style="margin-bottom: 4px; border-bottom: 1px solid #222; padding-bottom: 4px;">
+                        <span
+                            :style="{ color: log.level === 'error' ? '#f44336' : (log.level === 'warn' ? '#ff9800' : '#888') }">
+                            [{{ log.timestamp }}] {{ log.level ? log.level.toUpperCase() : 'INFO' }}:
+                        </span>
+                        <span style="color: #eee;">{{ log.message }}</span>
+                        <div v-if="Object.keys(log).length > 3" class="muted" style="margin-left: 20px;">
+                            {{ JSON.stringify(Object.fromEntries(Object.entries(log).filter(([k]) =>
+                            !['level','message','timestamp'].includes(k)))) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="showAddModal" class="overlay" @click.self="showAddModal = false">
+                <div class="modal">
+                    <div class="modal-header" style="margin-bottom: 24px;">
+                        <h3 style="margin:0; font-size: 18px; font-weight: 600; color:#fff;">Add New Entry</h3>
+                        <button class="close-btn" @click="showAddModal = false">✕</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Display Title</label>
+                        <input v-model="newGame.title" type="text" placeholder="e.g. Beat Saber">
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>R2 Hash ID (Zip)</label>
+                            <div style="display:flex; gap:8px; align-items: center;">
+                                <div class="form-control" style="flex: 1; display:flex; align-items:center; gap:10px;">
+                                    <span v-if="newGame.hashId" style="color:#9cdcfe; font-family: Consolas, monospace; font-size: 12px;">
+                                        {{ newGame.hashId }}
+                                    </span>
+                                    <span v-else style="color:#777;">No hash selected</span>
+                                    <span v-if="newGame.hashId && md5FileName(newGame.hashId)" style="margin-left:auto; color:#ce9178; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px;">
+                                        {{ md5FileName(newGame.hashId) }}
+                                    </span>
+                                </div>
+                                <button class="btn" @click="openMd5Picker" :disabled="md5MapLoading">Select</button>
+                                <button class="btn btn-tab" style="padding: 0 10px;" @click="fetchMd5Map(true)" :disabled="md5MapLoading">↻</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Version</label>
+                            <input v-model="newGame.version" type="text" placeholder="1.0">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea v-model="newGame.description" rows="2" placeholder="Brief game overview..."></textarea>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 24px;">
+                        <label>Thumbnail Visual</label>
+                        <div class="grid-layout" style="display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start;">
+                            <input v-model="newGame.thumbnailUrl" type="text" placeholder="Image URL (automatic if uploaded)">
+                            <div class="dropzone" :class="{ active: imageDragOver }"
+                                @dragenter.prevent="imageDragOver = true" @dragover.prevent="imageDragOver = true"
+                                @dragleave.prevent="imageDragOver = false" @drop.prevent="handleImageDrop"
+                                style="padding: 8px 12px; border-style: solid; min-width: 120px; height: 38px; box-sizing: border-box; justify-content: center;">
+                                <button class="btn btn-tab" style="border:none; padding:0; font-size: 11px;" @click="openImagePicker"
+                                    :disabled="imageState.inProgress">{{ imageState.inProgress ? 'Uploding...' : 'Upload Image' }}</button>
+                                <input ref="imageInput" type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+                                    style="display:none" @change="handleImagePick">
+                            </div>
+                        </div>
+                        <div class="muted" style="margin-top: 8px; color: #b5cea8;" v-if="newGame.thumbnailUrl">✓ Image mapped correctly</div>
+                        <div style="margin-top: 8px; color:#ff9999; font-size: 11px;" v-if="imageState.error">{{ imageState.error }}</div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button class="btn btn-tab" style="border:none;" @click="showAddModal = false">Cancel</button>
+                        <button class="btn" style="min-width: 100px; justify-content: center;" @click="addGame">Save to DB</button>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="showMd5Picker" class="overlay" @click.self="showMd5Picker = false" style="z-index: 200;">
+                <div class="modal" style="width: 720px; max-height: 80vh; display:flex; flex-direction: column;">
+                    <div class="modal-header" style="margin-bottom: 18px;">
+                        <h3 style="margin:0; font-size: 16px; font-weight: 600; color:#fff;">Select Zip (Search)</h3>
+                        <button class="close-btn" @click="showMd5Picker = false">✕</button>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 14px;">
+                        <input v-model="md5SearchQuery" type="text" placeholder="Search by file name or hash…" style="width: 100%;">
+                    </div>
+
+                    <div style="border: 1px solid #333; border-radius: 8px; overflow: hidden; flex: 1; min-height: 220px;">
+                        <div v-if="md5MapLoading" class="muted" style="padding: 18px;">Loading Hash map…</div>
+                        <div v-else-if="filteredMd5Items.length === 0" class="muted" style="padding: 18px;">No matches.</div>
+                        <table v-else style="margin: 0; width: 100%; border-collapse: separate; border-spacing: 0;">
+                            <thead>
+                                <tr>
+                                    <th style="padding: 12px 14px;">File Name</th>
+                                    <th style="padding: 12px 14px;">Hash ID</th>
+                                    <th style="padding: 12px 14px; width: 90px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="item in filteredMd5Items" :key="item.hash" @click="selectMd5(item)" style="cursor: pointer;">
+                                    <td style="padding: 12px 14px; color:#ce9178;">{{ item.folder }}</td>
+                                    <td style="padding: 12px 14px; font-family: Consolas, monospace; color:#9cdcfe;">{{ item.hash }}</td>
+                                    <td style="padding: 12px 14px; text-align: right;">
+                                        <button class="btn btn-tab" style="padding: 6px 10px;">Pick</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="display:flex; justify-content: space-between; align-items:center; margin-top: 14px;">
+                        <div class="muted" style="font-size: 11px;">{{ filteredMd5Items.length }} items</div>
+                        <button class="btn btn-tab" @click="fetchMd5Map(true)" :disabled="md5MapLoading">Refresh</button>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <script>
+        const { createApp } = Vue
+
+        function _md5RotateLeft(x, c) { return (x << c) | (x >>> (32 - c)); }
+        function _md5Add(x, y) { return (x + y) >>> 0; }
+        function _md5F(x, y, z) { return (x & y) | (~x & z); }
+        function _md5G(x, y, z) { return (x & z) | (y & ~z); }
+        function _md5H(x, y, z) { return x ^ y ^ z; }
+        function _md5I(x, y, z) { return y ^ (x | ~z); }
+
+        function _md5Round(fn, a, b, c, d, x, s, t) {
+            return _md5Add(_md5RotateLeft(_md5Add(_md5Add(a, fn(b, c, d)), _md5Add(x, t)), s), b);
+        }
+
+        function _md5BytesToWords(bytes) {
+            const words = new Uint32Array(((bytes.length + 3) / 4) | 0);
+            for (let i = 0; i < bytes.length; i++) {
+                words[i >> 2] |= bytes[i] << ((i % 4) * 8);
+            }
+            return words;
+        }
+
+        function _md5WordsToHex(words) {
+            const hex = [];
+            for (let i = 0; i < words.length; i++) {
+                let w = words[i];
+                for (let j = 0; j < 4; j++) {
+                    const b = (w >>> (j * 8)) & 0xff;
+                    hex.push((b >>> 4).toString(16));
+                    hex.push((b & 0x0f).toString(16));
+                }
+            }
+            return hex.join('');
+        }
+
+        function md5ArrayBuffer(buffer) {
+            const bytes = new Uint8Array(buffer);
+            const origLen = bytes.length;
+            const withOne = origLen + 1;
+            const padLen = (withOne % 64 <= 56) ? (56 - (withOne % 64)) : (56 + (64 - (withOne % 64)));
+            const totalLen = withOne + padLen + 8;
+            const padded = new Uint8Array(totalLen);
+            padded.set(bytes);
+            padded[origLen] = 0x80;
+            const bitLen = origLen * 8;
+            for (let i = 0; i < 8; i++) padded[totalLen - 8 + i] = (bitLen >>> (i * 8)) & 0xff;
+
+            const x = _md5BytesToWords(padded);
+
+            let a0 = 0x67452301;
+            let b0 = 0xefcdab89;
+            let c0 = 0x98badcfe;
+            let d0 = 0x10325476;
+
+            const k = [
+                0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee, 0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
+                0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be, 0x6b901122, 0xfd987193, 0xa679438e, 0x49b40821,
+                0xf61e2562, 0xc040b340, 0x265e5a51, 0xe9b6c7aa, 0xd62f105d, 0x02441453, 0xd8a1e681, 0xe7d3fbc8,
+                0x21e1cde6, 0xc33707d6, 0xf4d50d87, 0x455a14ed, 0xa9e3e905, 0xfcefa3f8, 0x676f02d9, 0x8d2a4c8a,
+                0xfffa3942, 0x8771f681, 0x6d9d6122, 0xfde5380c, 0xa4beea44, 0x4bdecfa9, 0xf6bb4b60, 0xbebfbc70,
+                0x289b7ec6, 0xeaa127fa, 0xd4ef3085, 0x04881d05, 0xd9d4d039, 0xe6db99e5, 0x1fa27cf8, 0xc4ac5665,
+                0xf4292244, 0x432aff97, 0xab9423a7, 0xfc93a039, 0x655b59c3, 0x8f0ccc92, 0xffeff47d, 0x85845dd1,
+                0x6fa87e4f, 0xfe2ce6e0, 0xa3014314, 0x4e0811a1, 0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391
+            ];
+            const s = [
+                7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
+                5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
+                4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
+                6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21
+            ];
+
+            for (let i = 0; i < x.length; i += 16) {
+                let a = a0, b = b0, c = c0, d = d0;
+                for (let j = 0; j < 64; j++) {
+                    let f, g;
+                    if (j < 16) { f = _md5F(b, c, d); g = j; }
+                    else if (j < 32) { f = _md5G(b, c, d); g = (5 * j + 1) % 16; }
+                    else if (j < 48) { f = _md5H(b, c, d); g = (3 * j + 5) % 16; }
+                    else { f = _md5I(b, c, d); g = (7 * j) % 16; }
+                    const tmp = d;
+                    d = c;
+                    c = b;
+                    b = _md5Round(() => f, a, b, c, tmp, x[i + g], s[j], k[j]);
+                    a = tmp;
+                }
+                a0 = _md5Add(a0, a);
+                b0 = _md5Add(b0, b);
+                c0 = _md5Add(c0, c);
+                d0 = _md5Add(d0, d);
+            }
+
+            return _md5WordsToHex([a0, b0, c0, d0]);
+        }
+
+        async function md5File(file) {
+            const buf = await file.arrayBuffer();
+            return md5ArrayBuffer(buf);
+        }
+
+        function md5String(value) {
+            const encoder = new TextEncoder();
+            const bytes = encoder.encode(String(value ?? ''));
+            return md5ArrayBuffer(bytes.buffer);
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onerror = () => reject(new Error('Failed to read file'));
+                reader.onload = () => {
+                    const result = String(reader.result || '');
+                    const idx = result.indexOf(',');
+                    if (idx === -1) return reject(new Error('Invalid data URL'));
+                    resolve(result.slice(idx + 1));
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        createApp({
+            data() {
+                return {
+                    isAuthenticated: false,
+                    password: '',
+                    games: [],
+                    activeTab: 'games',
+                    donations: [],
+                    donationsLoading: false,
+                    storagePrefix: '',
+                    storageFolders: [],
+                    storageObjects: [],
+                    storageLoading: false,
+                    storageError: '',
+                    storageTruncated: false,
+                    md5MapItems: [],
+                    md5MapLoading: false,
+                    md5MapError: '',
+                    md5MapLastSyncAt: 0,
+                    selectedIds: [],
+                    showAddModal: false,
+                    showMd5Picker: false,
+                    md5SearchQuery: '',
+                    newGame: {
+                        title: '',
+                        hashId: '',
+                        version: '',
+                        description: '',
+                        thumbnailUrl: ''
+                    },
+                    imageDragOver: false,
+                    imageState: {
+                        inProgress: false,
+                        message: '',
+                        error: ''
+                    },
+                    isDragOver: false,
+                    preparedFile: null,
+                    preparedFileName: '',
+                    hashState: {
+                        computing: false,
+                        hash: '',
+                        copied: false
+                    },
+                    uploadState: {
+                        inProgress: false,
+                        lastFileName: '',
+                        key: '',
+                        uploadId: '',
+                        percent: 0,
+                        mbps: 0,
+                        eta: '--:--',
+                        message: '',
+                        error: '',
+                        removing: false
+                    },
+                    uploadInternals: {
+                        startedAt: 0,
+                        totalBytes: 0,
+                        uploadedBytes: 0,
+                        perPartLoaded: {},
+                        parts: [],
+                        activeRequests: []
+                    },
+                    bulkDragOver: false,
+                    bulkQueueOpen: false,
+                    bulkQueue: [],
+                    bulkState: {
+                        inProgress: false,
+                        currentName: '',
+                        currentHash: '',
+                        currentPercent: 0,
+                        currentMbps: 0,
+                        currentEta: '--:--',
+                        totalPercent: 0,
+                        totalEta: '--:--',
+                        error: ''
+                    },
+                    bulkInternals: {
+                        batchStartedAt: 0,
+                        totalBytes: 0,
+                        doneBytes: 0,
+                        currentLoaded: 0,
+                        activeXhrs: [],
+                        currentKey: '',
+                        currentUploadId: '',
+                        cancelCurrent: false
+                    },
+                    migration: {
+                        inProgress: false,
+                        currentFolder: '',
+                        processed: 0,
+                        total: 0,
+                        errors: [],
+                        logs: []
+                    },
+                    migrationTimer: null,
+                    toasts: [],
+                    serverLogs: [],
+                    searchQuery: ''
+                }
+            },
+            computed: {
+                filteredGames() {
+                    if (!this.searchQuery) return this.games;
+                    const q = this.searchQuery.toLowerCase();
+                    return this.games.filter(g => 
+                        g.title.toLowerCase().includes(q) || 
+                        g.hashId.toLowerCase().includes(q) ||
+                        g.version.toLowerCase().includes(q)
+                    );
+                },
+                filteredMd5Items() {
+                    const q = String(this.md5SearchQuery || '').toLowerCase();
+                    if (!q) return this.md5MapItems;
+                    return this.md5MapItems.filter(item => {
+                        const name = String(item.folder || '').toLowerCase();
+                        const hash = String(item.hash || '').toLowerCase();
+                        return name.includes(q) || hash.includes(q);
+                    });
+                }
+            },
+            mounted() {
+                // Check if already authenticated via cookie
+                fetch('/api/admin/check')
+                    .then(r => r.json())
+                    .then(j => {
+                        if (j.authenticated) {
+                            this.isAuthenticated = true;
+                            this.fetchGames();
+                        } else {
+                            // Try auto-login if a password was saved locally
+                            const savedPwd = localStorage.getItem('admin_pwd');
+                            if (savedPwd) {
+                                this.password = savedPwd;
+                                this.login();
+                            }
+                        }
+                    })
+                    .catch(() => {
+                        // Fallback in case of server error
+                        const savedPwd = localStorage.getItem('admin_pwd');
+                        if (savedPwd) this.password = savedPwd;
+                    });
+            },
+            methods: {
+                async login() {
+                    const res = await fetch('/api/admin/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password: this.password })
+                    });
+                    const json = await res.json();
+                    if (res.ok && json.success) {
+                        this.isAuthenticated = true;
+                        localStorage.setItem('admin_pwd', this.password);
+                        this.fetchGames();
+                        this.showToast('Logged in successfully', 'success');
+                    } else {
+                        this.showToast(json.error || 'Invalid password', 'error');
+                    }
+                },
+                showToast(message, type = 'info') {
+                    const id = Date.now();
+                    this.toasts.push({ id, message, type });
+                    setTimeout(() => {
+                        this.toasts = this.toasts.filter(t => t.id !== id);
+                    }, 4000);
+                },
+                async openAddModal() {
+                    this.showAddModal = true;
+                    await this.fetchMd5Map(false);
+                },
+                openMd5Picker() {
+                    this.md5SearchQuery = '';
+                    this.showMd5Picker = true;
+                },
+                selectMd5(item) {
+                    this.newGame.hashId = item.hash;
+                    this.showMd5Picker = false;
+                },
+                md5FileName(hash) {
+                    const found = this.md5MapItems.find(i => i.hash === hash);
+                    return found ? found.folder : '';
+                },
+                async fetchMd5Map(force) {
+                    if (this.md5MapLoading) return;
+                    this.md5MapLoading = true;
+                    this.md5MapError = '';
+                    try {
+                        const res = await fetch(`/api/md5-map${force ? '?force=1' : ''}`);
+                        const json = await res.json();
+                        if (!res.ok) throw new Error(json.error || 'Failed to load MD5 map');
+                        this.md5MapItems = Array.isArray(json.items) ? json.items : [];
+                        this.md5MapLastSyncAt = Number(json.lastSyncAt || 0);
+                    } catch (e) {
+                        this.md5MapError = String(e.message || e);
+                        this.md5MapItems = [];
+                    } finally {
+                        this.md5MapLoading = false;
+                    }
+                },
+                async syncMd5Map() {
+                    await this.fetchMd5Map(true);
+                    this.showToast('MD5 map synced successfully', 'success');
+                },
+                async openDonations() {
+                    this.activeTab = 'donations';
+                    await this.fetchDonations();
+                },
+                async fetchDonations() {
+                    this.donationsLoading = true;
+                    try {
+                        const res = await fetch('/api/donations/list');
+                        const json = await res.json();
+                        if (!res.ok) throw new Error(json.error || 'Failed to load donations');
+                        this.donations = Array.isArray(json.items) ? json.items : [];
+                    } catch (e) {
+                        this.showToast(String(e.message || e), 'error');
+                        this.donations = [];
+                    } finally {
+                        this.donationsLoading = false;
+                    }
+                },
+                async downloadDonation(key) {
+                    try {
+                        const res = await fetch(`/api/donations/download-url?key=${encodeURIComponent(key)}`);
+                        const json = await res.json();
+                        if (res.ok && json.url) {
+                            window.open(json.url, '_blank');
+                        } else {
+                            this.showToast(json.error || 'Failed map', 'error');
+                        }
+                    } catch (e) {
+                        this.showToast(e.message, 'error');
+                    }
+                },
+                async openStorage() {
+                    this.activeTab = 'storage';
+                    await this.fetchStorage(this.storagePrefix);
+                },
+                storageDisplayName(full) {
+                    const p = String(full || '');
+                    const prefix = this.storagePrefix || '';
+                    if (prefix && p.startsWith(prefix)) {
+                        return p.slice(prefix.length).replace(/\/$/, '');
+                    }
+                    return p.replace(/\/$/, '');
+                },
+                storageUp() {
+                    if (!this.storagePrefix) return;
+                    const p = this.storagePrefix.replace(/\/$/, '');
+                    const idx = p.lastIndexOf('/');
+                    this.storagePrefix = idx === -1 ? '' : p.slice(0, idx + 1);
+                    this.fetchStorage(this.storagePrefix);
+                },
+                formatBytes(bytes) {
+                    const n = Number(bytes || 0);
+                    if (!n) return '-';
+                    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+                    let u = 0, v = n;
+                    while (v >= 1024 && u < units.length - 1) { v /= 1024; u++; }
+                    return `${v.toFixed(1)} ${units[u]}`;
+                },
+                async fetchStorage(prefix) {
+                    this.storageLoading = true;
+                    this.storageError = '';
+                    try {
+                        const res = await fetch(`/api/storage/list?prefix=${encodeURIComponent(prefix || '')}`);
+                        const json = await res.json();
+                        if (res.ok) {
+                            this.storagePrefix = json.prefix || '';
+                            this.storageFolders = json.folders || [];
+                            this.storageObjects = json.objects || [];
+                            this.storageTruncated = !!json.isTruncated;
+                        }
+                    } catch (e) {
+                        this.storageError = e.message;
+                    } finally {
+                        this.storageLoading = false;
+                    }
+                },
+                async openStorageFolder(prefix) {
+                    this.fetchStorage(prefix);
+                },
+                async downloadStorage(key) {
+                    try {
+                        const res = await fetch(`/api/storage/download-url?key=${encodeURIComponent(key)}`);
+                        const json = await res.json();
+                        if (res.ok) window.open(json.url, '_blank');
+                    } catch (e) {
+                        this.showToast(e.message, 'error');
+                    }
+                },
+                async deleteStorageKey(key) {
+                    if (!confirm(`Delete ${key}?`)) return;
+                    await fetch('/api/storage/delete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ key })
+                    });
+                    this.fetchStorage(this.storagePrefix);
+                },
+                async deleteStoragePrefix(prefix) {
+                    if (!confirm(`Delete folder ${prefix}?`)) return;
+                    await fetch('/api/storage/delete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prefix })
+                    });
+                    this.fetchStorage(this.storagePrefix);
+                },
+                openFilePicker() {
+                    this.$refs.fileInput.click();
+                },
+                handleFileInput(e) {
+                    const file = e.target.files && e.target.files[0];
+                    e.target.value = '';
+                    if (file) this.prepareUpload(file);
+                },
+                handleDrop(e) {
+                    this.isDragOver = false;
+                    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+                    if (file) this.prepareUpload(file);
+                },
+                openBulkPicker() {
+                    this.$refs.bulkInput.click();
+                },
+                handleBulkPick(e) {
+                    const list = e.target.files ? Array.from(e.target.files) : [];
+                    e.target.value = '';
+                    this.prepareBulkQueue(list);
+                },
+                handleBulkDrop(e) {
+                    this.bulkDragOver = false;
+                    const list = e.dataTransfer && e.dataTransfer.files ? Array.from(e.dataTransfer.files) : [];
+                    this.prepareBulkQueue(list);
+                },
+                prepareBulkQueue(files) {
+                    const zips = (files || []).filter(f => f && f.name && f.name.toLowerCase().endsWith('.zip')).slice(0, 20);
+                    if (zips.length === 0) return;
+                    this.bulkQueueOpen = true;
+                    for (const f of zips) {
+                        this.bulkQueue.push({
+                            name: f.name,
+                            size: f.size,
+                            file: f,
+                            hash: '',
+                            status: 'pending'
+                        });
+                    }
+                },
+                resetUploadState() {
+                    this.uploadState.inProgress = false;
+                    this.uploadState.percent = 0;
+                    this.uploadState.mbps = 0;
+                    this.uploadState.eta = '--:--';
+                    this.uploadState.message = '';
+                    this.uploadState.error = '';
+                    this.uploadState.removing = false;
+                    this.preparedFile = null;
+                    this.preparedFileName = '';
+                    this.hashState.computing = false;
+                    this.hashState.hash = '';
+                    this.hashState.copied = false;
+                    this.uploadInternals.startedAt = 0;
+                    this.uploadInternals.totalBytes = 0;
+                    this.uploadInternals.uploadedBytes = 0;
+                    this.uploadInternals.perPartLoaded = {};
+                    this.uploadInternals.parts = [];
+                    this.uploadInternals.activeRequests.forEach(r => r.abort());
+                    this.uploadInternals.activeRequests = [];
+                },
+                async copyHash() {
+                    try {
+                        await navigator.clipboard.writeText(this.hashState.hash);
+                        this.hashState.copied = true;
+                        setTimeout(() => { this.hashState.copied = false; }, 1200);
+                    } catch (e) {
+                        alert('Copy failed');
+                    }
+                },
+                openImagePicker() {
+                    this.$refs.imageInput.click();
+                },
+                async handleImagePick(e) {
+                    const file = e.target.files && e.target.files[0];
+                    e.target.value = '';
+                    if (file) await this.uploadImageToGithub(file);
+                },
+                async handleImageDrop(e) {
+                    this.imageDragOver = false;
+                    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+                    if (file) await this.uploadImageToGithub(file);
+                },
+                async copyImageUrl() {
+                    try {
+                        await navigator.clipboard.writeText(this.newGame.thumbnailUrl);
+                        this.imageState.message = 'Copied image URL';
+                        this.showToast('Image URL copied to clipboard', 'info');
+                        setTimeout(() => { this.imageState.message = ''; }, 1200);
+                    } catch {
+                        this.showToast('Copy failed', 'error');
+                    }
+                },
+                async uploadImageToGithub(file) {
+                    const title = String(this.newGame.title || '').trim();
+                    if (!title) {
+                        this.imageState.error = 'Title required';
+                        return;
+                    }
+                    this.imageState.inProgress = true;
+                    this.imageState.message = 'Uploading image...';
+                    try {
+                        const base64 = await fileToBase64(file);
+                        const res = await fetch('/api/github/images', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ title, contentType: file.type, base64 })
+                        });
+                        const json = await res.json();
+                        if (res.ok) {
+                            this.newGame.thumbnailUrl = json.url;
+                            this.imageState.message = 'Image uploaded';
+                        } else {
+                            throw new Error(json.error);
+                        }
+                    } catch (e) {
+                        this.imageState.error = e.message;
+                    } finally {
+                        this.imageState.inProgress = false;
+                    }
+                },
+                fmtEta(seconds) {
+                    if (!Number.isFinite(seconds) || seconds <= 0) return '--:--';
+                    const m = Math.floor(seconds / 60);
+                    const s = Math.floor(seconds % 60);
+                    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+                },
+                updateProgress() {
+                    const total = this.uploadInternals.totalBytes || 0;
+                    const uploaded = this.uploadInternals.uploadedBytes || 0;
+                    this.uploadState.percent = total ? (uploaded / total) * 100 : 0;
+                    const elapsed = (Date.now() - this.uploadInternals.startedAt) / 1000;
+                    const bps = elapsed > 0 ? uploaded / elapsed : 0;
+                    this.uploadState.mbps = bps / (1024 * 1024);
+                    this.uploadState.eta = this.fmtEta(bps > 0 ? (total - uploaded) / bps : Infinity);
+                },
+                cancelUpload() {
+                    this.uploadState.inProgress = false;
+                    this.uploadInternals.activeRequests.forEach(r => r.abort());
+                    this.resetUploadState();
+                },
+                async prepareUpload(file) {
+                    if (this.uploadState.inProgress) return;
+                    this.resetUploadState();
+                    this.preparedFile = file;
+                    this.preparedFileName = file.name;
+                    this.hashState.computing = true;
+                    try {
+                        const res = await fetch(`/api/uploads/hash?filename=${encodeURIComponent(file.name)}`);
+                        const json = await res.json();
+                        if (!res.ok) throw new Error(json.error || 'Failed to compute hash');
+                        this.hashState.hash = String(json.hash || '');
+                    } catch (e) {
+                        this.showToast(String(e.message || e), 'error');
+                        this.hashState.hash = '';
+                    } finally {
+                        this.hashState.computing = false;
+                    }
+                },
+                async startUploadPrepared() {
+                    if (!this.preparedFile) return;
+                    const file = this.preparedFile;
+                    this.uploadState.inProgress = true;
+                    this.uploadInternals.startedAt = Date.now();
+                    this.uploadInternals.totalBytes = file.size;
+                    this.uploadInternals.uploadedBytes = 0;
+                    this.uploadInternals.perPartLoaded = {};
+                    this.uploadInternals.parts = [];
+                    this.uploadInternals.activeRequests = [];
+
+                    const cacheKey = `upload_${file.name}_${file.size}`;
+                    let uploadMeta = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+
+                    try {
+                        let initKey, initUploadId;
+                        const parts = [];
+
+                        if (uploadMeta && uploadMeta.key && uploadMeta.uploadId) {
+                            initKey = uploadMeta.key;
+                            initUploadId = uploadMeta.uploadId;
+                            parts.push(...(uploadMeta.parts || []));
+                        } else {
+                            const initRes = await fetch('/api/uploads/init', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ filename: file.name })
+                            });
+                            const init = await initRes.json();
+                            if (!initRes.ok) throw new Error(init.error || 'Upload init failed');
+
+                            initKey = init.key;
+                            initUploadId = init.uploadId;
+                            if (init && init.hash && !this.hashState.hash) this.hashState.hash = String(init.hash);
+                            localStorage.setItem(cacheKey, JSON.stringify({ key: initKey, uploadId: initUploadId, parts: [] }));
+                        }
+
+                        const partSize = file.size >= 1024 * 1024 * 1024 ? 128 * 1024 * 1024 : 64 * 1024 * 1024;
+                        const totalParts = Math.ceil(file.size / partSize);
+
+                        for (let i = 0; i < totalParts; i++) {
+                            if (!this.uploadState.inProgress) throw new Error('Canceled');
+                            const num = i + 1;
+
+                            if (parts.some(p => p.PartNumber === num)) {
+                                this.uploadInternals.perPartLoaded[num] = Math.min(partSize, file.size - i * partSize);
+                                let sum = 0; for (const k in this.uploadInternals.perPartLoaded) sum += this.uploadInternals.perPartLoaded[k];
+                                this.uploadInternals.uploadedBytes = sum;
+                                this.updateProgress();
+                                continue;
+                            }
+
+                            const start = i * partSize, end = Math.min(start + partSize, file.size);
+                            const blob = file.slice(start, end);
+
+                            const partRes = await fetch('/api/uploads/part-url', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ key: initKey, uploadId: initUploadId, partNumber: num })
+                            });
+                            const partJson = await partRes.json();
+                            if (!partRes.ok) throw new Error(partJson.error || 'Failed to get part URL');
+                            const { url } = partJson;
+                            if (!url) throw new Error('Missing upload URL');
+
+                            const etag = await new Promise((resolve, reject) => {
+                                const xhr = new XMLHttpRequest();
+                                this.uploadInternals.activeRequests.push(xhr);
+                                xhr.open('PUT', url, true);
+                                xhr.upload.onprogress = (e) => {
+                                    this.uploadInternals.perPartLoaded[num] = e.loaded;
+                                    let sum = 0; for (const k in this.uploadInternals.perPartLoaded) sum += this.uploadInternals.perPartLoaded[k];
+                                    this.uploadInternals.uploadedBytes = sum;
+                                    this.updateProgress();
+                                };
+                                xhr.onload = () => resolve(xhr.getResponseHeader('ETag'));
+                                xhr.onerror = reject;
+                                xhr.onabort = () => reject(new Error('Canceled'));
+                                xhr.send(blob);
+                            });
+
+                            parts.push({ ETag: etag, PartNumber: num });
+                            localStorage.setItem(cacheKey, JSON.stringify({ key: initKey, uploadId: initUploadId, parts }));
+                        }
+
+                        const completeRes = await fetch('/api/uploads/complete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ key: initKey, uploadId: initUploadId, parts: parts.sort((a, b) => a.PartNumber - b.PartNumber) })
+                        });
+                        const completeJson = await completeRes.json().catch(() => ({}));
+                        if (!completeRes.ok) throw new Error(completeJson.error || 'Upload complete failed');
+
+                        localStorage.removeItem(cacheKey);
+                        this.uploadState.message = 'Done';
+                        this.showToast('Upload completed', 'success');
+                        await this.fetchMd5Map(true);
+                        setTimeout(() => this.fetchGames(), 1000);
+                        this.uploadState.inProgress = false;
+                        this.uploadState.percent = 100;
+                        setTimeout(() => {
+                            this.uploadState.removing = true;
+                            setTimeout(() => this.resetUploadState(), 450);
+                        }, 800);
+                    } catch (e) {
+                        this.uploadState.error = e.message;
+                        this.showToast('Upload interrupted or failed', 'error');
+                        this.uploadState.inProgress = false;
+                    }
+                },
+                async startBulkUpload() {
+                    this.bulkState.inProgress = true;
+                    this.bulkInternals.batchStartedAt = Date.now();
+                    this.bulkInternals.totalBytes = this.bulkQueue.reduce((s, i) => s + i.size, 0);
+                    for (const item of this.bulkQueue) {
+                        if (!this.bulkState.inProgress) break;
+                        if (item.status === 'done') continue;
+                        item.status = 'uploading';
+                        this.bulkState.currentName = item.name;
+                        this.bulkState.currentHash = item.hash;
+                        try {
+                            await this.uploadOneBulkItem(item);
+                            item.status = 'done';
+                            this.bulkInternals.doneBytes += item.size;
+                        } catch (e) {
+                            item.status = 'error';
+                        }
+                    }
+                    this.bulkState.inProgress = false;
+                    await this.fetchMd5Map(true);
+                    for (const item of this.bulkQueue) item.removing = true;
+                    setTimeout(() => {
+                        this.bulkQueue = [];
+                        this.bulkQueueOpen = false;
+                    }, 650);
+                },
+                async uploadOneBulkItem(item) {
+                    const file = item.file;
+                    const cacheKey = `upload_${file.name}_${file.size}`;
+                    let uploadMeta = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+
+                    let initKey, initUploadId;
+                    const parts = [];
+
+                    if (!item.hash) {
+                        try {
+                            const r = await fetch(`/api/uploads/hash?filename=${encodeURIComponent(file.name)}`);
+                            const j = await r.json();
+                            if (r.ok && j.hash) {
+                                item.hash = String(j.hash);
+                                this.bulkState.currentHash = item.hash;
+                            }
+                        } catch (_) { }
+                    }
+
+                    if (uploadMeta && uploadMeta.key && uploadMeta.uploadId) {
+                        initKey = uploadMeta.key;
+                        initUploadId = uploadMeta.uploadId;
+                        parts.push(...(uploadMeta.parts || []));
+                    } else {
+                        const init = await fetch('/api/uploads/init', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ filename: file.name })
+                        }).then(r => r.json());
+                        initKey = init.key;
+                        initUploadId = init.uploadId;
+                        if (init && init.hash && !item.hash) {
+                            item.hash = String(init.hash);
+                            this.bulkState.currentHash = item.hash;
+                        }
+                        localStorage.setItem(cacheKey, JSON.stringify({ key: initKey, uploadId: initUploadId, parts: [] }));
+                    }
+
+                    const partSize = file.size >= 1024 * 1024 * 1024 ? 128 * 1024 * 1024 : 64 * 1024 * 1024;
+                    const totalParts = Math.ceil(file.size / partSize);
+
+                    for (let i = 0; i < totalParts; i++) {
+                        if (!this.bulkState.inProgress) throw new Error('Cancelled');
+                        const num = i + 1;
+
+                        if (parts.some(p => p.PartNumber === num)) {
+                            const loaded = Math.min(partSize, file.size - i * partSize);
+                            const currentUploaded = (i * partSize) + loaded;
+                            this.bulkState.currentPercent = (currentUploaded / file.size) * 100;
+
+                            const totalUploaded = this.bulkInternals.doneBytes + currentUploaded;
+                            this.bulkState.totalPercent = (totalUploaded / this.bulkInternals.totalBytes) * 100;
+
+                            const elapsed = (Date.now() - this.bulkInternals.batchStartedAt) / 1000;
+                            const bps = elapsed > 0 ? totalUploaded / elapsed : 0;
+                            this.bulkState.currentMbps = bps / (1024 * 1024);
+                            this.bulkState.totalEta = this.fmtEta(bps > 0 ? (this.bulkInternals.totalBytes - totalUploaded) / bps : Infinity);
+                            continue;
+                        }
+
+                        const start = i * partSize;
+                        const end = Math.min(start + partSize, file.size);
+                        const blob = file.slice(start, end);
+
+                        const { url } = await fetch('/api/uploads/part-url', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ key: initKey, uploadId: initUploadId, partNumber: num })
+                        }).then(r => r.json());
+
+                        const etag = await new Promise((resolve, reject) => {
+                            const xhr = new XMLHttpRequest();
+                            this.bulkInternals.activeXhrs.push(xhr);
+                            xhr.open('PUT', url, true);
+                            xhr.upload.onprogress = (e) => {
+                                const loaded = e.loaded;
+                                const currentUploaded = (i * partSize) + loaded;
+                                this.bulkState.currentPercent = (currentUploaded / file.size) * 100;
+
+                                const totalUploaded = this.bulkInternals.doneBytes + currentUploaded;
+                                this.bulkState.totalPercent = (totalUploaded / this.bulkInternals.totalBytes) * 100;
+
+                                const elapsed = (Date.now() - this.bulkInternals.batchStartedAt) / 1000;
+                                const bps = elapsed > 0 ? totalUploaded / elapsed : 0;
+                                this.bulkState.currentMbps = bps / (1024 * 1024);
+                                this.bulkState.totalEta = this.fmtEta(bps > 0 ? (this.bulkInternals.totalBytes - totalUploaded) / bps : Infinity);
+                            };
+                            xhr.onload = () => resolve(xhr.getResponseHeader('ETag'));
+                            xhr.onerror = reject;
+                            xhr.onabort = () => reject(new Error('Cancelled'));
+                            xhr.send(blob);
+                        });
+                        parts.push({ ETag: etag, PartNumber: num });
+                        localStorage.setItem(cacheKey, JSON.stringify({ key: initKey, uploadId: initUploadId, parts }));
+                    }
+
+                    await fetch('/api/uploads/complete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ key: initKey, uploadId: initUploadId, parts: parts.sort((a, b) => a.PartNumber - b.PartNumber) })
+                    });
+
+                    localStorage.removeItem(cacheKey);
+                },
+                cancelCurrentBulkItem() {
+                    this.bulkInternals.activeXhrs.forEach(xhr => xhr.abort());
+                    this.bulkInternals.activeXhrs = [];
+                },
+                cancelBulkUpload() {
+                    this.bulkState.inProgress = false;
+                    this.cancelCurrentBulkItem();
+                },
+                async fetchGames() {
+                    const res = await fetch('/api/database');
+                    if (res.ok) this.games = await res.json();
+                },
+                async addGame() {
+                    const res = await fetch('/api/database', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.newGame)
+                    });
+                    if (res.ok) {
+                        this.fetchGames();
+                        this.showAddModal = false;
+                        this.showToast('Game added successfully', 'success');
+                    } else {
+                        const json = await res.json();
+                        this.showToast(json.error || 'Failed to add game', 'error');
+                    }
+                },
+                async bulkRemove() {
+                    if (confirm(`Delete ${this.selectedIds.length} games?`)) {
+                        await fetch('/api/database/bulk-delete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ids: this.selectedIds })
+                        });
+                        this.fetchGames();
+                        this.selectedIds = [];
+                        this.showToast('Games deleted successfully', 'success');
+                    }
+                },
+                async openMigration() {
+                    this.activeTab = 'migration';
+                    await this.fetchMigrationStatus();
+                },
+                async startMigration() {
+                    if (!confirm('Start R2 to ZIP migration? This may take a long time.')) return;
+                    const res = await fetch('/api/migrate/start', { method: 'POST' });
+                    if (res.ok) {
+                        this.startMigrationPolling();
+                    } else {
+                        alert('Failed to start');
+                    }
+                },
+                async fetchMigrationStatus() {
+                    const res = await fetch('/api/migrate/status');
+                    if (res.ok) {
+                        const status = await res.json();
+                        this.migration = status;
+                        if (status.inProgress) {
+                            this.startMigrationPolling();
+                        } else {
+                            this.stopMigrationPolling();
+                            if (this.activeTab === 'migration') this.fetchGames();
+                        }
+                    }
+                },
+                startMigrationPolling() {
+                    if (this.migrationTimer) return;
+                    this.migrationTimer = setInterval(() => this.fetchMigrationStatus(), 3000);
+                },
+                stopMigrationPolling() {
+                    if (this.migrationTimer) {
+                        clearInterval(this.migrationTimer);
+                        this.migrationTimer = null;
+                    }
+                },
+                async openLogs() {
+                    this.activeTab = 'logs';
+                    await this.fetchLogs();
+                },
+                async fetchLogs() {
+                    try {
+                        const res = await fetch('/api/server-logs');
+                        const json = await res.json();
+                        this.serverLogs = json.logs || [];
+                    } catch (e) {
+                        this.showToast('Failed to fetch logs', 'error');
+                    }
+                },
+                toggleAll(e) {
+                    this.selectedIds = e.target.checked ? this.games.map(g => g.id) : [];
+                }
+            }
+        }).mount('#app')
+    </script>
+</body>
+
+</html>
