@@ -1,5 +1,4 @@
 import dotenv from 'dotenv';
-import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -9,20 +8,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.join(__dirname, '..', '..');
 
-function makePrivateKey(stableName, ext) {
-    const secret = process.env.HASH_SECRET || process.env.R2_SECRET_ACCESS_KEY || process.env.JWT_SECRET || 'quest-archive-fallback-secret';
-    const id = crypto.createHmac('sha256', secret).update(String(stableName), 'utf8').digest('hex').slice(0, 32);
-    return `private/${id}.${ext}`;
-}
-
 const legacyDbKey = process.env.R2_DB_KEY || '';
 const legacyMapKey = process.env.R2_MD5_MAP_KEY || 'map_md5.json';
 
 const insecureDbKey = !legacyDbKey || legacyDbKey === 'database.json';
 const insecureMapKey = !legacyMapKey || legacyMapKey === 'map_md5.json';
 
-const effectiveDbKey = insecureDbKey ? makePrivateKey('database', 'json') : legacyDbKey;
-const effectiveMapKey = insecureMapKey ? makePrivateKey('map_md5', 'json') : legacyMapKey;
+const effectiveDbKey = insecureDbKey ? 'private/database.json' : legacyDbKey;
+const effectiveMapKey = insecureMapKey ? 'private/map_md5.json' : legacyMapKey;
 
 export const config = {
     PORT: process.env.PORT || 3000,
