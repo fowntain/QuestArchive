@@ -662,8 +662,8 @@
                     </tr>
                     <tr v-for="(row, idx) in storageRows" :key="row.kind + ':' + row.key">
                         <td>
-                            <input type="checkbox" :checked="isStorageSelected(row.key)"
-                                @click.prevent.stop="toggleStorageSelection(row, idx, $event)">
+                            <input type="checkbox" v-model="storageSelectedKeys" :value="row.key"
+                                @click.stop="handleStorageCheckboxClick(row, idx, $event)">
                         </td>
                         <td v-if="row.kind === 'folder'" style="color:#9cdcfe; cursor:pointer;"
                             @click="openStorageFolder(row.key)">{{ storageDisplayName(row.key) }}</td>
@@ -1320,15 +1320,15 @@
                     });
                     this.fetchStorage(this.storagePrefix);
                 },
-                isStorageSelected(key) {
-                    return this.storageSelectedKeys.includes(key);
-                },
-                toggleStorageSelection(row, idx, e) {
+                handleStorageCheckboxClick(row, idx, e) {
                     const key = row.key;
                     const has = this.storageSelectedKeys.includes(key);
                     const willSelect = !has;
 
                     if (e && e.shiftKey && this.storageLastSelectedIndex !== null) {
+                        e.preventDefault();
+                        e.stopPropagation();
+
                         const start = Math.min(this.storageLastSelectedIndex, idx);
                         const end = Math.max(this.storageLastSelectedIndex, idx);
                         const next = new Set(this.storageSelectedKeys);
@@ -1339,10 +1339,8 @@
                             else next.delete(k);
                         }
                         this.storageSelectedKeys = Array.from(next);
-                    } else {
-                        if (willSelect) this.storageSelectedKeys = [...this.storageSelectedKeys, key];
-                        else this.storageSelectedKeys = this.storageSelectedKeys.filter(k => k !== key);
                     }
+
                     this.storageLastSelectedIndex = idx;
                 },
                 toggleSelectAllStorage() {
